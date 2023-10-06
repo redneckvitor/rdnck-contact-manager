@@ -53,32 +53,61 @@ class AddContactComponent(Component):
 
         # Label do nome
         self.name_label = customtkinter.CTkLabel(self, text="Nome:", font=("Arial", 24))
-        self.name_label.pack(anchor="w", pady=(0), padx=(40))
+        self.name_label.pack(anchor="w", pady=0, padx=40)
         # Campo para escrever o nome
         self.name_entry = customtkinter.CTkEntry(self, width=400, height=32)
         self.name_entry.pack(pady=10)
 
         # Label do número de telefone
         self.phone_label = customtkinter.CTkLabel(self, text="Telefone:", font=("Arial", 24))
-        self.phone_label.pack(anchor="w", pady=(0), padx=(40))
-        # A se fazer: permitir que apenas números sejam escritos e caso a pessoa tente
-        # digitar letras ou o contato não salva até que seja resolvido ou as
-        # letras não são adicionadas
+        self.phone_label.pack(anchor="w", pady=10, padx=40)
+        # Campo para escrever o número de telefone - Apenas números são permitidos
+        self.phone_entry = customtkinter.CTkEntry(self, width=400, height=32, validate="key",
+                                                  validatecommand=(self.register(self._validate_phone), "%P"))
+        self.phone_entry.pack(pady=0)
 
-        # Campo para escrever o número de telefone
-        self.phone_entry = customtkinter.CTkEntry(self, width=400, height=32)
-        self.phone_entry.pack(pady=10)
+        # Label para mostrar mensagens de erro
+        self.error_message = customtkinter.CTkLabel(self, text="", font=("Arial", 16))
+        self.error_message.pack(pady=10)
 
         # Botão de salvar contato
         # Para se fazer: salvar contatos com a mesma função de quando o botão é clicado
         # usando quando Enter do teclado é pressionado
         self.save_button = customtkinter.CTkButton(self, text="Salvar Contato", command=self.save_contact,
                                                    width=200, height=40, font=("Arial", 20))
-        self.save_button.pack(pady=20)
+        self.save_button.pack(pady=60)
+
+    def _validate_phone(self, value):
+        return value.isdigit() or value == ""
+
+    def _phone_exists(self, phone):
+        with open('contacts.csv', 'r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row and row[1] == phone:
+                    return True
+        return False
 
     def save_contact(self):
-        # Aqui você pode adicionar a funcionalidade para salvar o contato
-        pass
+        name = self.name_entry.get()
+        phone = self.phone_entry.get()
+
+        if not name:
+            name = "Desconhecido"
+
+        if phone:
+            if not self._phone_exists(phone):
+                with open('contacts.csv', 'a', newline='', encoding='utf-8-sig') as file:
+                    writer = csv.writer(file, delimiter=',')
+                    writer.writerow([name, phone])
+                self.name_entry.delete(0, END)
+                self.phone_entry.delete(0, END)
+                self.error_message.configure(text="")
+            else:
+                # Se o telefone já existir, mostra uma mensagem de erro
+                self.error_message.configure(text="Erro: O número de telefone já existe!")
+        else:
+            self.error_message.configure(text="Erro: O campo de telefone é obrigatório!")
 
 
 if __name__ == "__main__":
